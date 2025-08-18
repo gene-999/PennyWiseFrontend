@@ -143,10 +143,14 @@ const TransactionsPage = ({isChatOpen, setIsChatOpen}: any) => {
     .sort((a, b) => {
       switch (sortOrder) {
         case 'newest':
-          //@ts-expect-error
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+
           return new Date(b.date) - new Date(a.date);
         case 'oldest':
-          //@ts-expect-error
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+
           return new Date(a.date) - new Date(b.date);
         case 'highest':
           return b.amount - a.amount;

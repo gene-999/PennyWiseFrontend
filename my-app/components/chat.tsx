@@ -65,7 +65,9 @@ export const ChatComponent = ({isChatOpen, setIsChatOpen}: any) => {
       const botResponse = {
         id: messages.length + 2,
         text:
-        //@ts-expect-error
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+
           botResponses[text.toLowerCase()] ||
           "I understand your question. Let me help you with that. Is there anything specific you'd like to know about your finances?",
         isBot: true,

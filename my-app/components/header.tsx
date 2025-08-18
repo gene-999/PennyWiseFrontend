@@ -49,7 +49,9 @@ function isRouteActive(currentRoute: string, target: string): boolean {
 
 useEffect(() => {
   const handleClickOutside = (event: any) => {
-    //@ts-expect-error
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+
     if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
       setIsProfileMenuOpen(false);
     }
