@@ -4,8 +4,9 @@ import CreateTransaction from '@/components/createTransaction';
 import Header from '@/components/header';
 import TransactionCards from '@/components/transactionCards';
 import Chart from '@/components/chart';
+import { ChatComponent } from '../../../components/chat';
 
-const ExpenseDashboard = () => {
+const ExpenseDashboard = ({isChatOpen, setIsChatOpen}: any) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [transactions, setTransactions] = useState([]);
@@ -19,6 +20,8 @@ const ExpenseDashboard = () => {
         setIsModalOpen={setIsModalOpen}
         isMobileMenuOpen={isMobileMenuOpen}
         setIsMobileMenuOpen={setIsMobileMenuOpen}
+        setIsChatOpen={setIsChatOpen}
+        isChatOpen={isChatOpen}
       />
 
       <div className="px-4 sm:px-6 lg:px-8 py-6">
@@ -52,10 +55,42 @@ const ExpenseDashboard = () => {
         {/* Monthly Overview Chart */}
         <Chart />
       </div>
-
-      {/* Modal */}
     </div>
   );
 };
 
-export default ExpenseDashboard;
+// export default ExpenseDashboard;
+
+export default function Thing() {
+  const [isChatOpen, setIsChatOpen] = useState(false);
+
+  return (
+    <>
+      {/* Desktop view */}
+      <div className="hidden lg:flex w-full overflow-hidden">
+        {/* Transactions area */}
+        <div className={`transition-all duration-300 ${isChatOpen ? 'w-2/3' : 'w-full'} overflow-hidden`}>
+          <ExpenseDashboard isChatOpen={isChatOpen} setIsChatOpen={setIsChatOpen} />
+        </div>
+
+        {/* Chat area (shown only if open) */}
+        {isChatOpen && (
+          <div className="w-1/3 h-full overflow-hidden border-l border-gray-200">
+            <ChatComponent isChatOpen={isChatOpen} setIsChatOpen={setIsChatOpen} />
+          </div>
+        )}
+      </div>
+
+      {/* Mobile view */}
+      <div className="lg:hidden overflow-hidden">
+        {isChatOpen ? (
+          <ChatComponent isChatOpen={isChatOpen} setIsChatOpen={setIsChatOpen} />
+        ) : (
+          <ExpenseDashboard isChatOpen={isChatOpen} setIsChatOpen={setIsChatOpen} />
+        )}
+      </div>
+    </>
+  );
+}
+
+

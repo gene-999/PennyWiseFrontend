@@ -51,7 +51,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className="font-mono ">
       <head>
         <link
         precedence="default"
@@ -60,7 +60,7 @@ export default function RootLayout({
         />
       </head>
 
-      <body>
+      <body className="bg-[#f5f6ff] bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-repeat">
         {children}
       </body>
     </html>
