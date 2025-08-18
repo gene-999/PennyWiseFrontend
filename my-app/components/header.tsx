@@ -49,7 +49,7 @@ function isRouteActive(currentRoute: string, target: string): boolean {
 
 useEffect(() => {
   const handleClickOutside = (event: any) => {
-    // @ts-ignore
+    //@ts-expect-error
     if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
       setIsProfileMenuOpen(false);
     }

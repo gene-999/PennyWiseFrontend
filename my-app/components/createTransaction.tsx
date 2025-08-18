@@ -34,7 +34,7 @@ export default function CreateTransaction({ isModalOpen, setIsModalOpen }: any) 
   const [activeLabel, setActiveLabel] = useState('Today');
 
   const handleDateChange = (label: string) => {
-    let newDate = new Date();
+    const newDate = new Date();
 
     if (label === 'Yesterday') {
       newDate.setDate(newDate.getDate() - 1);

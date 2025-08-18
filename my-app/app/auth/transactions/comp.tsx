@@ -143,10 +143,10 @@ const TransactionsPage = ({isChatOpen, setIsChatOpen}: any) => {
     .sort((a, b) => {
       switch (sortOrder) {
         case 'newest':
-          //@ts-ignore
+          //@ts-expect-error
           return new Date(b.date) - new Date(a.date);
         case 'oldest':
-          //@ts-ignore
+          //@ts-expect-error
           return new Date(a.date) - new Date(b.date);
         case 'highest':
           return b.amount - a.amount;
@@ -325,7 +325,7 @@ const TransactionsPage = ({isChatOpen, setIsChatOpen}: any) => {
               <div className="flex flex-wrap gap-2">
                 {searchQuery && (
                   <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
-                    Search: "{searchQuery}"
+                    Search: {searchQuery}
                   </span>
                 )}
                 {filterType !== 'all' && (

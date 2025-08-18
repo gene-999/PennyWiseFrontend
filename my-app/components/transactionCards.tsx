@@ -89,7 +89,7 @@ export default function TransactionCards({transactions}: any) {
           <ArrowLeftRight size={16} className="text-gray-400 mb-2" />
         </div>
         <p className="text-sm text-gray-500 mt-2">
-          You've logged {47 + transactions.length} expenses so far this month.
+          You've logged ${47 + transactions.length} expenses so far this month.
         </p>
       </div>
     </div>
