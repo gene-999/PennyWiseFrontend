@@ -15,7 +15,9 @@ export default function ProfileMenu({
   const profileMenuRef = useRef(null);
 
   useEffect(() => {
-    const handleClickOutside = (event) => {
+    const handleClickOutside = (event: any) => {
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
       if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
         setIsOpen(false);
       }
