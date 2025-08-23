@@ -336,7 +336,6 @@ useEffect(() => {
               className="text-gray-500 hover:text-gray-900"
               onClick={() => {
                 setIsChatOpen(true);
-                console.log(isChatOpen);
               }}
             >
               AI Chatbot
@@ -348,18 +347,18 @@ useEffect(() => {
         <div className="hidden lg:flex items-center space-x-3">
           {isChatOpen && (
             <nav className="hidden lg:flex items-center space-x-8 left-1/3 transform -translate-x-1/2">
-              <a href="#" className={`${isRouteActive(pathname, 'auth/home') ? 'text-gray-900': 'text-gray-500'} font-medium`}>
+              <a href="/auth/home" className={`${isRouteActive(pathname, 'auth/home') ? 'text-gray-900': 'text-gray-500'} font-medium`}>
                 Home
               </a>
-              <a href="#" className={`${isRouteActive(pathname, 'auth/transactions') ? 'text-gray-900': 'text-gray-500'} hover:text-gray-900`}>
+              <a href="/auth/transactions" className={`${isRouteActive(pathname, 'auth/transactions') ? 'text-gray-900': 'text-gray-500'} hover:text-gray-900`}>
                 Transactions
               </a>
               <a
-                href="#"
+                href=""
                 className="text-gray-500 hover:text-gray-900"
                 onClick={() => {
                   setIsChatOpen(true);
-                  console.log(isChatOpen);
+
                 }}
               >
                 AI Chatbot
