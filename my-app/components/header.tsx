@@ -1,5 +1,5 @@
 'use client';
-import React, { use, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ChevronDown,
   List,
@@ -29,7 +29,7 @@ export default function Header({
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isCategoriesModalOpen, setIsCategoriesModalOpen] = useState(false);
   // const [isDarkMode, setIsDarkMode] = useState(false);
-  
+  // const [activeMenu, setActiveMenu] = useState('auth/home');
 
 const pathname = usePathname();
 
@@ -37,15 +37,7 @@ function isRouteActive(currentRoute: string, target: string): boolean {
   return currentRoute.includes(target);
 }
 
-// this
-  useEffect(( )=>{
-    if(isRouteActive(pathname, "cat")){
-      setIsCategoriesModalOpen(true)
-    }
-    if(isRouteActive(pathname, "prof")){
-      setIsProfileModalOpen(true)
-    }
-  },[pathname])
+
   const [userProfile, setUserProfile] = useState({
     name: 'Eugene',
     email: 'eugene@example.com',
