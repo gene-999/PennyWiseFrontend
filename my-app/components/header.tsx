@@ -12,6 +12,8 @@ import {
 } from 'lucide-react';
 import CreateTransaction from './createTransaction';
 import { usePathname } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
+import { useUser } from '@/lib/hooks/auth';
 
 
 export default function Header({
@@ -28,44 +30,54 @@ export default function Header({
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isCategoriesModalOpen, setIsCategoriesModalOpen] = useState(false);
-  // const [isDarkMode, setIsDarkMode] = useState(false);
-  // const [activeMenu, setActiveMenu] = useState('auth/home');
+  
+  console.log(isModalOpen)
+  const { user, loading, error } = useUser();
+  console.log(user?.user_metadata.username)
 
-const pathname = usePathname();
+  const pathname = usePathname();
 
-function isRouteActive(currentRoute: string, target: string): boolean {
-  return currentRoute.includes(target);
-}
-
+  function isRouteActive(currentRoute: string, target: string): boolean {
+    return currentRoute.includes(target);
+  }
 
   const [userProfile, setUserProfile] = useState({
-    name: 'Eugene',
-    email: 'eugene@example.com',
-    phone: '+233 24 123 4567',
+    name: '',
+    email: '',
+    phone: '',
     currency: 'GHS',
   });
 
+  useEffect(() => {
+    if (user) {
+      setUserProfile({
+        name: user.user_metadata?.username || 'User',
+        email: user.email || '',
+        phone: '',
+        currency: 'GHS',
+      });
+    }
+  }, [user]);
+
   const profileMenuRef = useRef(null);
 
-useEffect(() => {
-  const handleClickOutside = (event: any) => {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-
-    if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
-      setIsProfileMenuOpen(false);
+  useEffect(() => {
+    const handleClickOutside = (event: any) => {
+      // @ts-ignore
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
+        setIsProfileMenuOpen(false);
+      }
+    };
+    console.log(document.body.offsetWidth)
+    if(document.body.offsetWidth > 1000) {
+      if (isProfileMenuOpen) {
+        document.addEventListener('mousedown', handleClickOutside);
+      }
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
     }
-  };
-  console.log(document.body.offsetWidth)
-  if(document.body.offsetWidth > 1000)
- { if (isProfileMenuOpen) {
-    document.addEventListener('mousedown', handleClickOutside);
-  }
-  return () => {
-    document.removeEventListener('mousedown', handleClickOutside);
-  };}
-}, [isProfileMenuOpen]);
-
+  }, [isProfileMenuOpen]);
 
   const handleProfileUpdate = (updatedProfile: any) => {
     setUserProfile(updatedProfile);
@@ -236,32 +248,34 @@ useEffect(() => {
   };
 
   return (
-    <div className="bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-8">
-      <div className="flex justify-between items-center h-16">
+    <div className="bg-white border-b border-gray-200 px-3 sm:px-4 md:px-6 lg:px-8">
+      <div className="flex justify-between items-center h-14 sm:h-16">
         {/* Mobile: Logo and Hamburger */}
         <div className="flex items-center justify-between w-full lg:w-auto">
-          <h1 className="text-xl font-medium text-gray-900">Penny Wise</h1>
+          <h1 className="text-lg sm:text-xl font-medium text-gray-900">Penny Wise</h1>
 
-          <div className="flex items-center space-x-2 sm:space-x-4">
+          <div className="flex items-center gap-2 sm:gap-3 md:gap-4 lg:hidden">
             <button
-              className="lg:hidden bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition-colors mr-2"
+              className="bg-blue-600 text-white p-1.5 sm:p-2 rounded-lg hover:bg-blue-700 transition-colors"
               onClick={handleAddTransaction}
+              aria-label="Add transaction"
             >
-              <X className="w-4 h-4 rotate-45" />
+              <X className="w-4 h-4 sm:w-5 sm:h-5 rotate-45" />
             </button>
             <button
-              className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center lg:hidden"
+              className="w-7 h-7 sm:w-8 sm:h-8 bg-blue-100 rounded-full flex items-center justify-center"
               ref={profileMenuRef}
               onClick={(e) => {
                 e.preventDefault();
                 setIsProfileMenuOpen((open) => !open);
               }}
+              aria-label="Profile menu"
             >
-              <span className="text-blue-600 font-medium text-sm">E</span>
+              <span className="text-blue-600 font-medium text-xs sm:text-sm">E</span>
             </button>
             {isProfileMenuOpen && (
               <div
-                className={`absolute right-1.5 mt-72 lg:hidden w-64 rounded-lg shadow-lg border z-50 ${'bg-white border-gray-200'}`}
+                className={`absolute right-2 top-14 sm:top-16 lg:hidden w-56 sm:w-64 rounded-lg shadow-lg border z-50 ${'bg-white border-gray-200'}`}
                 tabIndex={-1}
                 onClick={(e) => e.stopPropagation()}
               >
@@ -315,25 +329,26 @@ useEffect(() => {
             )}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="lg:hidden text-gray-500 hover:text-gray-700 p-2"
+              className="lg:hidden text-gray-500 hover:text-gray-700 p-1 sm:p-2 transition-colors"
+              aria-label="Toggle menu"
             >
-              <Menu size={35} />
+              <Menu className="w-6 h-6 sm:w-7 sm:h-7" />
             </button>
           </div>
         </div>
 
         {/* Desktop: Centered Navigation */}
         {!isChatOpen && (
-          <nav className="hidden lg:flex items-center space-x-8 absolute left-1/2 transform -translate-x-1/2">
-            <a href="/auth/home" className={`${isRouteActive(pathname, 'auth/home') ? 'text-gray-900': 'text-gray-500'} font-medium`}>
+          <nav className="hidden lg:flex items-center space-x-6 xl:space-x-8 absolute left-1/2 transform -translate-x-1/2">
+            <a href="/auth/home" className={`${isRouteActive(pathname, 'auth/home') ? 'text-gray-900': 'text-gray-500'} font-medium hover:text-gray-900 transition-colors`}>
               Home
             </a>
-            <a href="/auth/transactions" className={`${isRouteActive(pathname, 'auth/transactions') ? 'text-gray-900': 'text-gray-500'} hover:text-gray-900`}>
+            <a href="/auth/transactions" className={`${isRouteActive(pathname, 'auth/transactions') ? 'text-gray-900': 'text-gray-500'} hover:text-gray-900 transition-colors`}>
               Transactions
             </a>
             <a
               href="#"
-              className="text-gray-500 hover:text-gray-900"
+              className="text-gray-500 hover:text-gray-900 transition-colors"
               onClick={() => {
                 setIsChatOpen(true);
               }}
@@ -344,21 +359,20 @@ useEffect(() => {
         )}
 
         {/* Desktop Right Side */}
-        <div className="hidden lg:flex items-center space-x-3">
+        <div className="hidden lg:flex items-center gap-2 xl:gap-3">
           {isChatOpen && (
-            <nav className="hidden lg:flex items-center space-x-8 left-1/3 transform -translate-x-1/2">
-              <a href="/auth/home" className={`${isRouteActive(pathname, 'auth/home') ? 'text-gray-900': 'text-gray-500'} font-medium`}>
+            <nav className="hidden xl:flex items-center space-x-6 mr-4">
+              <a href="/auth/home" className={`${isRouteActive(pathname, 'auth/home') ? 'text-gray-900': 'text-gray-500'} font-medium hover:text-gray-900 transition-colors text-sm`}>
                 Home
               </a>
-              <a href="/auth/transactions" className={`${isRouteActive(pathname, 'auth/transactions') ? 'text-gray-900': 'text-gray-500'} hover:text-gray-900`}>
+              <a href="/auth/transactions" className={`${isRouteActive(pathname, 'auth/transactions') ? 'text-gray-900': 'text-gray-500'} hover:text-gray-900 transition-colors text-sm`}>
                 Transactions
               </a>
               <a
-                href=""
-                className="text-gray-500 hover:text-gray-900"
+                href="#"
+                className="text-gray-500 hover:text-gray-900 transition-colors text-sm"
                 onClick={() => {
                   setIsChatOpen(true);
-
                 }}
               >
                 AI Chatbot
@@ -367,7 +381,7 @@ useEffect(() => {
           )}
           <button
             onClick={handleAddTransaction}
-            className="bg-[#0640ac] hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium"
+            className="bg-[#0640ac] hover:bg-blue-600 text-white px-3 lg:px-4 py-1.5 lg:py-2 rounded-lg text-xs lg:text-sm font-medium transition-colors whitespace-nowrap"
           >
             Add New Transaction
           </button>
@@ -450,19 +464,28 @@ useEffect(() => {
 
       {/* Mobile Navigation */}
       {isMobileMenuOpen && (
-        <div className="lg:hidden border-t border-gray-200 py-4">
-          <nav className="flex flex-col space-y-2">
-            <a href="/auth/home" className={`${isRouteActive(pathname, 'auth/home') ? 'text-gray-900': 'text-gray-500'} font-medium px-4 py-2`}>
+        <div className="lg:hidden border-t border-gray-200 py-2 sm:py-4 animate-in slide-in-from-top duration-200">
+          <nav className="flex flex-col space-y-1">
+            <a 
+              href="/auth/home" 
+              className={`${isRouteActive(pathname, 'auth/home') ? 'text-gray-900 bg-gray-50': 'text-gray-500'} font-medium px-4 py-2.5 sm:py-3 rounded-md mx-2 hover:bg-gray-50 transition-colors`}
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
               Home
             </a>
-            <a href="/auth/transactions" className={`${isRouteActive(pathname, 'auth/transactions') ? 'text-gray-900': 'text-gray-500'} hover:text-gray-900 px-4 py-2`}>
+            <a 
+              href="/auth/transactions" 
+              className={`${isRouteActive(pathname, 'auth/transactions') ? 'text-gray-900 bg-gray-50': 'text-gray-500'} font-medium px-4 py-2.5 sm:py-3 rounded-md mx-2 hover:bg-gray-50 transition-colors`}
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
               Transactions
             </a>
             <a
               href="#"
-              className="text-gray-500 hover:text-gray-900 px-4 py-2"
+              className="text-gray-500 font-medium px-4 py-2.5 sm:py-3 rounded-md mx-2 hover:bg-gray-50 transition-colors"
               onClick={() => {
                 setIsChatOpen(true);
+                setIsMobileMenuOpen(false);
               }}
             >
               AI Chatbot

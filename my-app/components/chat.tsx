@@ -1,95 +1,108 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Send, Bot, User, X, Plus } from 'lucide-react';
+'use client';
 
-export const ChatComponent = ({isChatOpen, setIsChatOpen}: any) => {
-  // const [isChatOpen, setIsChatOpen] = useState(false);
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      text: "Hello! I'm your financial assistant. How can I help you today?",
-      isBot: true,
-      timestamp: new Date(),
-    },
-  ]);
+import React, { useState, useEffect, useRef, useTransition } from 'react';
+import { Send, Bot, X } from 'lucide-react';
+import { useUser } from '@/lib/hooks/auth';
+import { askGemini } from '@/lib/hooks/gemini';
+import { useUserStore } from '@/lib/store';
+
+interface Message {
+  id: number | string;
+  text: string;
+  isBot: boolean;
+  timestamp: Date;
+}
+
+const initialMessage: Message = {
+  id: 1,
+  text: "Hello! I'm your financial assistant, Penny Wise. How can I help you manage your finances today?",
+  isBot: true,
+  timestamp: new Date(),
+};
+
+export const ChatComponent = ({
+  isChatOpen,
+  setIsChatOpen,
+  userId,
+  username,
+  email,
+}: {
+  isChatOpen: boolean;
+  setIsChatOpen: (isOpen: boolean) => void;
+  userId: string;
+  username: string;
+  email: string;
+}) => {
+  const [messages, setMessages] = useState<Message[]>([initialMessage]);
   const [inputText, setInputText] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const messagesEndRef = useRef(null);
+  const [isPending, startTransition] = useTransition();
+  const messagesEndRef = useRef<null | HTMLDivElement>(null);
+  const setUserId = useUserStore((state) => state.setUserId);
+  const setUserName = useUserStore((state) => state.setUserName);
+  const setUserEmail = useUserStore((state) => state.setUserEmail);
+
+  useEffect(() => {
+    setUserId(userId);
+    setUserName(username);
+    setUserEmail(email);
+  }, [userId, username, email]);
 
   const quickMessages = [
     'Check my recent transactions',
     "What's my spending this month?",
-    'Help me budget',
-    'Add a new expense',
-    'Show spending categories',
-    'Financial tips',
+    'Show my spending categories',
+    'Give me some financial tips',
   ];
 
-  const botResponses = {
-    'check my recent transactions':
-      "I can see your recent transactions. You've spent GHS 54.30 today on lunch and paid for a ride. Would you like me to show more details?",
-    "what's my spending this month?":
-      "This month you've spent GHS 1,982.10 total. Most of your spending went to food, bills, and data. That's a (+75%) increase from last 2 weeks.",
-    'help me budget':
-      "I'd be happy to help you create a budget! Based on your spending patterns, I can suggest allocating 50% for needs, 30% for wants, and 20% for savings. Would you like a detailed breakdown?",
-    'add a new expense':
-      "To add a new expense, you can click the 'Add New Transaction' button at the top, or tell me what you spent and I'll help you categorize it.",
-    'show spending categories':
-      'Your main spending categories are: Food & Transport (GHS 99.30), Groceries (GHS 45.80), and Utilities (GHS 25.00). Which category would you like to explore?',
-    'financial tips':
-      'Here are some tips: 1) Track every expense 2) Set monthly budgets 3) Build an emergency fund 4) Review your spending weekly. Would you like specific advice for any area?',
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // const scrollToBottom = () => {
-  //   messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  // };
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, isPending]);
 
-  // useEffect(() => {
-  //   scrollToBottom();
-  // }, [messages]);
+  const handleSendMessage = (text: string) => {
+    if (!text.trim() || isPending || !userId) return;
 
-  const handleSendMessage = (text: any) => {
-    if (!text.trim()) return;
-
-    const newMessage = {
-      id: messages.length + 1,
-      text: text,
+    const userMessage: Message = {
+      id: Date.now(),
+      text,
       isBot: false,
       timestamp: new Date(),
     };
 
-    setMessages((prev) => [...prev, newMessage]);
+    setMessages((prev) => [...prev, userMessage]);
     setInputText('');
-    setIsTyping(true);
 
-    setTimeout(() => {
-      const botResponse = {
-        id: messages.length + 2,
-        text:
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
+    // Use startTransition to call server action asynchronously
+    startTransition(async () => {
+      try {
+        const reply = await askGemini(text, userId);
 
-          botResponses[text.toLowerCase()] ||
-          "I understand your question. Let me help you with that. Is there anything specific you'd like to know about your finances?",
-        isBot: true,
-        timestamp: new Date(),
-      };
+        const botMessage: Message = {
+          id: Date.now() + 1,
+          text: reply || "I'm having trouble responding right now.",
+          isBot: true,
+          timestamp: new Date(),
+        };
 
-      setMessages((prev) => [...prev, botResponse]);
-      setIsTyping(false);
-    }, 1500);
+        setMessages((prev) => [...prev, botMessage]);
+      } catch (error) {
+        const errorMessage: Message = {
+          id: Date.now() + 1,
+          text: "Sorry, I couldn't connect to the server. Please try again later.",
+          isBot: true,
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, errorMessage]);
+      }
+    });
   };
 
-  const handleQuickMessage = (message: any) => {
-    handleSendMessage(message);
-  };
+  const formatTime = (date: Date) =>
+    date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
-  const formatTime = (date: any) => {
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
-
-  const handleCloseChat = () => {
-    setIsChatOpen(false);
-  };
   return (
     <div className="flex flex-col h-screen bg-white border-l border-gray-200">
       {/* Header */}
@@ -99,7 +112,7 @@ export const ChatComponent = ({isChatOpen, setIsChatOpen}: any) => {
           <h2 className="text-lg font-semibold text-gray-900">Penny Wise AI Chatbot</h2>
         </div>
         <button
-          onClick={handleCloseChat}
+          onClick={() => setIsChatOpen(false)}
           className="text-gray-400 hover:text-gray-600"
           aria-label="Close chat"
         >
@@ -110,20 +123,27 @@ export const ChatComponent = ({isChatOpen, setIsChatOpen}: any) => {
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-6 no-scrollbar">
         {messages.map((msg) => (
-          <div key={msg.id} className={`flex ${msg.isBot ? 'justify-start' : 'justify-end'}`}>
+          <div
+            key={msg.id}
+            className={`flex items-end gap-2 ${msg.isBot ? 'justify-start' : 'justify-end'}`}
+          >
+            {msg.isBot && <Bot className="w-6 h-6 text-gray-400 flex-shrink-0" />}
             <div
               className={`max-w-[80%] rounded-lg px-4 py-2 ${
                 msg.isBot ? 'bg-gray-100 text-gray-900' : 'bg-blue-600 text-white'
               }`}
             >
-              <p className="whitespace-pre-wrap">{msg.text}</p>
-              <span className="block text-xs mt-1 text-gray-400 text-right">
+              <p className="whitespace-pre-wrap text-sm">{msg.text}</p>
+              <span
+                className={`block text-xs mt-1 text-right ${msg.isBot ? 'text-gray-500' : 'text-blue-200'}`}
+              >
                 {formatTime(msg.timestamp)}
               </span>
             </div>
+            {!msg.isBot && <div className="w-6 h-6 flex-shrink-0" />}
           </div>
         ))}
-        {isTyping && (
+        {isPending && (
           <div className="flex justify-start">
             <div className="max-w-[80%] rounded-lg px-4 py-2 bg-gray-100 text-gray-900 italic">
               Penny Wise is typing...
@@ -133,51 +153,44 @@ export const ChatComponent = ({isChatOpen, setIsChatOpen}: any) => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Footer: Quick actions + Input combined */}
-      <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 flex flex-col gap-3">
-        <p className="text-sm text-gray-600 mb-2">Quick actions:</p>
-        <div className="flex flex-wrap gap-2">
-          {quickMessages.map((msg, i) => (
+      {/* Footer */}
+      <div className="px-4 py-3 bg-gray-50 border-t border-gray-200">
+        <div className="flex flex-wrap gap-2 mb-3">
+          {quickMessages.map((msg) => (
             <button
-              key={i}
-              onClick={() => handleQuickMessage(msg)}
-              className="bg-blue-600 text-white px-3 py-1 rounded-lg text-sm hover:bg-blue-700 transition"
+              key={msg}
+              onClick={() => handleSendMessage(msg)}
+              className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm hover:bg-blue-200 transition"
+              disabled={isPending}
             >
               {msg}
             </button>
           ))}
         </div>
-
-        {/* Input area */}
-        <div>
-          <div className="flex gap-3 items-center">
-            <input
-              type="text"
-              className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Type your message..."
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleSendMessage(inputText);
-                }
-              }}
-            />
-            <button
-              onClick={() => handleSendMessage(inputText)}
-              disabled={!inputText.trim()}
-              className={`p-2 rounded-lg ${
-                inputText.trim()
-                  ? 'bg-blue-600 text-white hover:bg-blue-700'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              }`}
-              aria-label="Send message"
-            >
-              <Send className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSendMessage(inputText);
+          }}
+          className="flex gap-3 items-center"
+        >
+          <input
+            type="text"
+            className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Type your message..."
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
+            disabled={isPending}
+          />
+          <button
+            type="submit"
+            disabled={!inputText.trim() || isPending}
+            className="p-2 rounded-lg transition-colors disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed bg-blue-600 text-white hover:bg-blue-700"
+            aria-label="Send message"
+          >
+            <Send className="w-5 h-5" />
+          </button>
+        </form>
       </div>
     </div>
   );

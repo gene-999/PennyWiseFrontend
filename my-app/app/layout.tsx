@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import "./globals.css";
+import { Toaster } from "sonner";
 
 // const defaultUrl = process.env.VERCEL_URL
 //   ? `https://${process.env.VERCEL_URL}`
@@ -60,7 +61,7 @@ export default function RootLayout({
         />
       </head>
 
-      <body className="bg-[#f5f6ff] bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-repeat">
+      <body className="bg-[#ffffff] bg-[url('https://www.transparenttextures.com/patterns/ag-square.png')] bg-repeat">
         {children}
       </body>
     </html>

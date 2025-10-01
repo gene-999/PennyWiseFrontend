@@ -1,21 +1,14 @@
-import React, { useState } from 'react';
-import {
-  X,
-  Calendar,
-  Tag,
-  ArrowUpRight,
-  ArrowDownLeft,
-  Search,
-  Filter,
-  Edit,
-  Save,
-  Trash2,
-} from 'lucide-react';
+'use client';
+import React, { useEffect, useState } from 'react';
+import { Calendar, Tag, ArrowUpRight, ArrowDownLeft, Search } from 'lucide-react';
 import Header from '@/components/header';
 import EditTransaction from '@/components/editTransaction';
 import { ChatComponent } from '../../../components/chat';
+import { getTransactions } from '@/lib/hooks/transcations';
+import { toast, Toaster } from 'sonner';
+import { useUserStore } from '@/lib/store';
 
-const TransactionsPage = ({isChatOpen, setIsChatOpen}: any) => {
+const TransactionsPage = ({ isChatOpen, setIsChatOpen }: any) => {
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [editMode, setEditMode] = useState(false);
   const [editData, setEditData] = useState({});
@@ -26,74 +19,22 @@ const TransactionsPage = ({isChatOpen, setIsChatOpen}: any) => {
   const [amountRange, setAmountRange] = useState({ min: '', max: '' });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  
 
-  const [transactions] = useState([
-    {
-      id: 1,
-      amount: 54.3,
-      description: 'Lunch and paid for a ride',
-      category: 'Food & Transport',
-      type: 'outflow',
-      date: '2024-08-17',
-    },
-    {
-      id: 2,
-      amount: 1200.0,
-      description: 'Monthly salary deposit',
-      category: 'Salary',
-      type: 'inflow',
-      date: '2024-08-15',
-    },
-    {
-      id: 3,
-      amount: 45.8,
-      description: 'Grocery shopping at MaxMart',
-      category: 'Groceries',
-      type: 'outflow',
-      date: '2024-08-16',
-    },
-    {
-      id: 4,
-      amount: 25.0,
-      description: 'Mobile data top-up',
-      category: 'Utilities',
-      type: 'outflow',
-      date: '2024-08-16',
-    },
-    {
-      id: 5,
-      amount: 120.5,
-      description: 'Fuel for the week',
-      category: 'Transport',
-      type: 'outflow',
-      date: '2024-08-15',
-    },
-    {
-      id: 6,
-      amount: 85.25,
-      description: 'Dinner with friends',
-      category: 'Entertainment',
-      type: 'outflow',
-      date: '2024-08-14',
-    },
-    {
-      id: 7,
-      amount: 300.0,
-      description: 'Freelance project payment',
-      category: 'Income',
-      type: 'inflow',
-      date: '2024-08-13',
-    },
-    {
-      id: 8,
-      amount: 15.75,
-      description: 'Coffee and snacks',
-      category: 'Food',
-      type: 'outflow',
-      date: '2024-08-13',
-    },
-  ]);
+  const [transactions, setTransactions] = useState<any>([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const data = await getTransactions();
+        setTransactions(data);
+        toast.success('Transactions loaded successfully.');
+      } catch (error: any) {
+        toast.error(error.message || 'Failed to load transactions.');
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const formatCurrency = (amount: any) => {
     return `GHS ${amount.toFixed(2)}`;
@@ -121,7 +62,7 @@ const TransactionsPage = ({isChatOpen, setIsChatOpen}: any) => {
   };
 
   const filteredTransactions = transactions
-    .filter((transaction) => {
+    .filter((transaction: any) => {
       const matchesSearch =
         transaction.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
         transaction.category.toLowerCase().includes(searchQuery.toLowerCase());
@@ -140,16 +81,16 @@ const TransactionsPage = ({isChatOpen, setIsChatOpen}: any) => {
 
       return matchesSearch && matchesFilter && matchesDateRange && matchesAmountRange;
     })
-    .sort((a, b) => {
+    .sort((a: any, b: any) => {
       switch (sortOrder) {
         case 'newest':
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
 
           return new Date(b.date) - new Date(a.date);
         case 'oldest':
           // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
+          // @ts-ignore
 
           return new Date(a.date) - new Date(b.date);
         case 'highest':
@@ -180,7 +121,7 @@ const TransactionsPage = ({isChatOpen, setIsChatOpen}: any) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f6ff] bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-repeat">
+    <div className="min-h-screen  ">
       {/* Header */}
       <Header
         isModalOpen={isModalOpen}
@@ -358,67 +299,66 @@ const TransactionsPage = ({isChatOpen, setIsChatOpen}: any) => {
         </div>
 
         {/* Transactions List */}
-<div className="bg-white rounded-lg border border-gray-200 ">
-  <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
-    <div className="grid grid-rows-2 items-center justify-between">
-      <h3 className="row-span-1 text-lg font-semibold text-gray-900">
-        Transactions ({filteredTransactions.length})
-      </h3>
-      <div className="text-sm text-gray-500">
-        Showing {filteredTransactions.length} of {transactions.length} transactions
-      </div>
-    </div>
-  </div>
-
-  {/* ✅ Scrollable list area */}
-  <div
-    className="divide-y divide-gray-200 overflow-y-auto no-scrollbar"
-    style={{ maxHeight: 'calc(100vh - 300px)' }} // Adjust based on actual height of header + filters
-  >
-    {filteredTransactions.map((transaction) => (
-      <div
-        key={transaction.id}
-        className="px-4 sm:px-6 py-4 hover:bg-gray-50 cursor-pointer transition-colors"
-        onClick={() => openModal(transaction)}
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3 sm:space-x-4 min-w-0 flex-1">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
-              {getTypeIcon(transaction.type)}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="font-medium text-gray-900 truncate">
-                {transaction.description}
-              </p>
-              <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2 mt-1">
-                <div className="flex items-center space-x-2">
-                  <Tag className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                  <span className="text-sm text-gray-500 truncate">
-                    {transaction.category}
-                  </span>
-                </div>
-                <span className="hidden sm:inline text-gray-300">•</span>
-                <div className="flex items-center space-x-2">
-                  <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                  <span className="text-sm text-gray-500">
-                    {formatDate(transaction.date)}
-                  </span>
-                </div>
+        <div className="bg-white rounded-lg border border-gray-200 ">
+          <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
+            <div className="grid grid-rows-2 items-center justify-between">
+              <h3 className="row-span-1 text-lg font-semibold text-gray-900">
+                Transactions ({filteredTransactions.length})
+              </h3>
+              <div className="text-sm text-gray-500">
+                Showing {filteredTransactions.length} of {transactions.length} transactions
               </div>
             </div>
           </div>
+
+          {/* ✅ Scrollable list area */}
           <div
-            className={`text-base sm:text-lg font-semibold ${getTypeColor(transaction.type)} flex-shrink-0`}
+            className="divide-y divide-gray-200 overflow-y-auto no-scrollbar"
+            style={{ maxHeight: 'calc(100vh - 300px)' }} // Adjust based on actual height of header + filters
           >
-            {transaction.type === 'inflow' ? '+' : '-'}
-            {formatCurrency(transaction.amount)}
+            {filteredTransactions.map((transaction: any) => (
+              <div
+                key={transaction.id}
+                className="px-4 sm:px-6 py-4 hover:bg-gray-50 cursor-pointer transition-colors"
+                onClick={() => openModal(transaction)}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3 sm:space-x-4 min-w-0 flex-1">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      {getTypeIcon(transaction.type)}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-gray-900 truncate">
+                        {transaction.description}
+                      </p>
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2 mt-1">
+                        <div className="flex items-center space-x-2">
+                          <Tag className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                          <span className="text-sm text-gray-500 truncate">
+                            {transaction.category}
+                          </span>
+                        </div>
+                        <span className="hidden sm:inline text-gray-300">•</span>
+                        <div className="flex items-center space-x-2">
+                          <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                          <span className="text-sm text-gray-500">
+                            {formatDate(transaction.date)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    className={`text-base sm:text-lg font-semibold ${getTypeColor(transaction.type)} flex-shrink-0`}
+                  >
+                    {transaction.type === 'inflow' ? '+' : '-'}
+                    {formatCurrency(transaction.amount)}
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
-      </div>
-    ))}
-  </div>
-</div>
-
 
         {filteredTransactions.length === 0 && (
           <div className="bg-white rounded-lg border border-gray-200 p-8 sm:p-12 text-center">
@@ -438,8 +378,8 @@ const TransactionsPage = ({isChatOpen, setIsChatOpen}: any) => {
           setSelectedTransaction={setSelectedTransaction}
           editMode={editMode}
           setEditMode={setEditMode}
-          editData={editData}
-          setEditData={setEditData}
+          // editData={editData}
+          // setEditData={setEditData}
         />
       )}
     </div>
@@ -448,23 +388,42 @@ const TransactionsPage = ({isChatOpen, setIsChatOpen}: any) => {
 
 export default TransactionsPage;
 
-
-export function Comp() {
+export function TransactionsComponent({
+  userId,
+  username,
+  email,
+}: {
+  userId: string;
+  username: string;
+  email: string;
+}) {
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const setUserId = useUserStore((state) => state.setUserId);
+  const setUserName = useUserStore((state) => state.setUserName);
+  const setUserEmail = useUserStore((state) => state.setUserEmail);
+
+  useEffect(() => {
+    setUserId(userId);
+    setUserName(username);
+    setUserEmail(email);
+  }, [userId, username, email]);
 
   return (
     <>
+      <Toaster position="top-right" />
       {/* Desktop view */}
-      <div className="hidden lg:flex w-full overflow-hidden">
+      <div className="hidden lg:flex w-full overflow-hidden ">
         {/* Transactions area */}
-        <div className={`transition-all duration-300 ${isChatOpen ? 'w-2/3' : 'w-full'} overflow-hidden`}>
+        <div
+          className={`transition-all duration-300 ${isChatOpen ? 'w-2/3' : 'w-full'} overflow-hidden`}
+        >
           <TransactionsPage isChatOpen={isChatOpen} setIsChatOpen={setIsChatOpen} />
         </div>
 
         {/* Chat area (shown only if open) */}
         {isChatOpen && (
           <div className="w-1/3 h-full overflow-hidden border-l border-gray-200">
-            <ChatComponent isChatOpen={isChatOpen} setIsChatOpen={setIsChatOpen} />
+            <ChatComponent isChatOpen={isChatOpen} setIsChatOpen={setIsChatOpen} userId={userId} username={username} email={email}/>
           </div>
         )}
       </div>
@@ -472,7 +431,7 @@ export function Comp() {
       {/* Mobile view */}
       <div className="lg:hidden overflow-hidden">
         {isChatOpen ? (
-          <ChatComponent isChatOpen={isChatOpen} setIsChatOpen={setIsChatOpen} />
+          <ChatComponent isChatOpen={isChatOpen} setIsChatOpen={setIsChatOpen}  userId={userId} username={username} email={email}/>
         ) : (
           <TransactionsPage isChatOpen={isChatOpen} setIsChatOpen={setIsChatOpen} />
         )}

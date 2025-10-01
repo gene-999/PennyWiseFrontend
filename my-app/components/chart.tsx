@@ -1,38 +1,107 @@
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
 import { getParamByISO } from 'iso-country-currency';
+import { isAfter, isBefore, subDays, startOfDay, format } from 'date-fns';
 
-export default function Chart() {
-  const chartData = [
-    { day: '1st', amount: 180, label: '1st' },
-    { day: '2nd', amount: 120, label: '2nd' },
-    { day: '3rd', amount: 45, label: '3rd' },
-    { day: '4th', amount: 80, label: '4th' },
-    { day: '5th', amount: 85, label: '5th' },
-    { day: '6th', amount: 160, label: '6th' },
-    { day: '7th', amount: 165, label: '7th' },
-    { day: '8th', amount: 110, label: '8th' },
-    { day: '9th', amount: 65, label: '9th' },
-    { day: '10th', amount: 55, label: '10th' },
-    { day: '11th', amount: 95, label: '11th' },
-    { day: '12th', amount: 120, label: '12th' },
-  ];
+type Transaction = {
+  date: string; // ISO string expected
+  amount: number | string;
+};
+
+export default function Chart({ transactions }: { transactions: Transaction[] }) {
+  const currency = getParamByISO('GH', 'currency') || 'GHS';
+
+  const today = startOfDay(new Date());
+
+  // Ranges
+  const startCurrent = subDays(today, 14);
+  const startPrevious = subDays(today, 28);
+  const endPrevious = subDays(today, 15);
+
+  // Group transactions
+  const currentTwoWeeks = transactions.filter((txn) => {
+    const date = new Date(txn.date);
+    return isAfter(date, startCurrent) && isBefore(date, today);
+  });
+
+  const previousTwoWeeks = transactions.filter((txn) => {
+    const date = new Date(txn.date);
+    return isAfter(date, startPrevious) && isBefore(date, endPrevious);
+  });
+
+  const sumAmount = (txns: typeof transactions) =>
+    txns.reduce((sum, t) => sum + (parseFloat(t.amount as string) || 0), 0);
+
+  const currentTotal = sumAmount(currentTwoWeeks);
+  const previousTotal = sumAmount(previousTwoWeeks);
+
+  let percentChange: number | null = null;
+
+  if (previousTotal > 0) {
+    percentChange = ((currentTotal - previousTotal) / previousTotal) * 100;
+  }
+
+  const dailyTotalsMap = new Map<string, number>();
+  let earliestDate: Date | null = null;
+
+  // Parse and group transactions by day
+  transactions.forEach((txn) => {
+    if (!txn.date) return;
+
+    const dateObj = new Date(txn.date);
+    const dateLabel = format(dateObj, 'd MMM');
+    const amount = parseFloat(txn.amount as string) || 0;
+
+    dailyTotalsMap.set(dateLabel, (dailyTotalsMap.get(dateLabel) || 0) + amount);
+
+    // Track earliest date
+    if (!earliestDate || dateObj < earliestDate) {
+      earliestDate = dateObj;
+    }
+  });
+
+  // If only one data point, inject a dummy previous day with 0 amount
+  if (dailyTotalsMap.size === 1 && earliestDate) {
+    const dayBefore = subDays(earliestDate, 1);
+    const labelBefore = format(dayBefore, 'd MMM');
+    dailyTotalsMap.set(labelBefore, 0);
+  }
+
+  // Sort data for chart
+  const sortedChartData = Array.from(dailyTotalsMap.entries())
+    .map(([label, amount]) => ({ label, amount }))
+    .sort((a, b) => {
+      const [dayA] = a.label.split(' ');
+      const [dayB] = b.label.split(' ');
+      return parseInt(dayA) - parseInt(dayB);
+    });
+
+  const monthlyTotal = sortedChartData.reduce((sum, day) => sum + day.amount, 0);
+
   return (
     <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
       <div className="mb-6">
-        <h3 className="text-lg text-gray-600 mb-2">Monthly Overview July</h3>
+        <h3 className="text-lg text-gray-600 mb-2">
+          Monthly Overview {format(new Date(), 'MMMM')}
+        </h3>
         <div className="text-2xl sm:text-3xl font-semibold text-gray-900 mb-2">
-          {getParamByISO('GH', 'currency')} 1,982.10
+          {currency} {monthlyTotal.toFixed(2)}
         </div>
-        <div className="flex items-center space-x-2">
-          <span className="text-green-500 text-sm">▲ (+75%)</span>
-          <span className="text-gray-500 text-sm">more Last 2 Weeks</span>
-        </div>
+        {percentChange !== null ? (
+          <div className="flex items-center space-x-2">
+            <span className={`text-sm ${percentChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+              {percentChange >= 0 ? '▲' : '▼'} ({Math.abs(percentChange).toFixed(1)}%)
+            </span>
+            <span className="text-gray-500 text-sm">compared to previous 2 weeks</span>
+          </div>
+        ) : (
+          <span className="text-gray-400 text-sm">Not enough data to compare</span>
+        )}
       </div>
 
       {/* Chart */}
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData} margin={{ top: 20, right: 0, left: -30, bottom: 20 }}>
+          <LineChart data={sortedChartData} margin={{ top: 20, right: 0, left: -30, bottom: 20 }}>
             <XAxis
               dataKey="label"
               axisLine={false}
@@ -40,10 +109,9 @@ export default function Chart() {
               tick={{ fontSize: 12, fill: '#9CA3AF' }}
             />
             <YAxis
-              domain={[0, 180]}
-              ticks={[0, 45, 90, 135, 180]}
-              axisLine={false}
+              domain={[0, 'dataMax + 50']}
               tickLine={false}
+              axisLine={false}
               tick={{ fontSize: 12, fill: '#9CA3AF' }}
             />
             <Tooltip
@@ -55,7 +123,7 @@ export default function Chart() {
                       <p className="text-sm">
                         Amount:{' '}
                         <span className="font-semibold">
-                          {getParamByISO('GH', 'currency')} {payload[0].value}
+                          {currency} {payload[0].value.toFixed(2)}
                         </span>
                       </p>
                     </div>
@@ -63,7 +131,11 @@ export default function Chart() {
                 }
                 return null;
               }}
-              cursor={{ stroke: '#6B7280', strokeWidth: 1, strokeDasharray: '4 4' }}
+              cursor={{
+                stroke: '#6B7280',
+                strokeWidth: 1,
+                strokeDasharray: '4 4',
+              }}
             />
             <Line
               type="monotone"
@@ -71,7 +143,12 @@ export default function Chart() {
               stroke="#6B7280"
               strokeWidth={2}
               dot={false}
-              activeDot={{ r: 6, fill: '#6B7280', stroke: '#fff', strokeWidth: 2 }}
+              activeDot={{
+                r: 6,
+                fill: '#6B7280',
+                stroke: '#fff',
+                strokeWidth: 2,
+              }}
             />
           </LineChart>
         </ResponsiveContainer>

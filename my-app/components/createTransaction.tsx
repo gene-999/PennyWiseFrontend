@@ -2,21 +2,14 @@
 import React, { useState } from 'react';
 import { Calendar, X, ChevronDown } from 'lucide-react';
 import { getParamByISO } from 'iso-country-currency';
+import { addTransaction } from '@/lib/hooks/transcations';
+import { useUserStore } from '@/lib/store'
+import { toast } from 'sonner';
 
 export default function CreateTransaction({ isModalOpen, setIsModalOpen }: any) {
-  type Transaction = {
-    id: number;
-    amount: number;
-    description: string;
-    category: string;
-    type: string;
-    date: string;
-  };
-
-  
   type TransactionType = 'outflow' | 'inflow';
 
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  console.log(isModalOpen)
   const [newTransaction, setNewTransaction] = useState<{
     amount: string;
     description: string;
@@ -32,7 +25,11 @@ export default function CreateTransaction({ isModalOpen, setIsModalOpen }: any) 
   });
 
   const [activeLabel, setActiveLabel] = useState('Today');
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+    const userId = useUserStore((state) => state.userId)
 
+    console.log(userId)
   const handleDateChange = (label: string) => {
     const newDate = new Date();
 
@@ -43,57 +40,75 @@ export default function CreateTransaction({ isModalOpen, setIsModalOpen }: any) 
     }
 
     const formattedDate = newDate.toISOString().split('T')[0];
-
     setNewTransaction({ ...newTransaction, date: formattedDate });
     setActiveLabel(label);
   };
 
   const buttons = ['Today', 'Yesterday', 'Last Week'];
 
-  const categories = {
-    outflow: [
-      { value: 'food', label: '🍽️ Food & Dining' },
-      { value: 'transport', label: '🚗 Transportation' },
-      { value: 'shopping', label: '🛍️ Shopping' },
-      { value: 'bills', label: '💡 Bills & Utilities' },
-      { value: 'entertainment', label: '🎬 Entertainment' },
-      { value: 'healthcare', label: '🏥 Healthcare' },
-      { value: 'education', label: '📚 Education' },
-      { value: 'other_expense', label: '💸 Other Expense' },
-    ],
-    inflow: [
-      { value: 'salary', label: '💰 Salary' },
-      { value: 'freelance', label: '💻 Freelance' },
-      { value: 'investment', label: '📈 Investment' },
-      { value: 'gift', label: '🎁 Gift' },
-      { value: 'refund', label: '↩️ Refund' },
-      { value: 'other_income', label: '💵 Other Income' },
-    ],
-  };
+const categories = {
+  outflow: [
+    { value: 'Food & Dining', label: '🍽️ Food & Dining' },
+    { value: 'Transportation', label: '🚗 Transportation' },
+    { value: 'Shopping', label: '🛍️ Shopping' },
+    { value: 'Bills & Utilities', label: '💡 Bills & Utilities' },
+    { value: 'Entertainment', label: '🎬 Entertainment' },
+    { value: 'Healthcare', label: '🏥 Healthcare' },
+    { value: 'Education', label: '📚 Education' },
+    { value: 'Other Expense', label: '💸 Other Expense' },
+  ],
+  inflow: [
+    { value: 'Salary', label: '💰 Salary' },
+    { value: 'Freelance', label: '💻 Freelance' },
+    { value: 'Investment', label: '📈 Investment' },
+    { value: 'Gift', label: '🎁 Gift' },
+    { value: 'Refund', label: '↩️ Refund' },
+    { value: 'Other Income', label: '💵 Other Income' },
+  ],
+};
 
-  const handleAddTransaction = () => {
-    setIsModalOpen(true);
-  };
-
-  const handleSubmitTransaction = (e: any) => {
+  // Submit transaction to Supabase
+  const handleSubmitTransaction = async (e: any) => {
     e.preventDefault();
+    setErrorMsg('');
     if (!newTransaction.amount || !newTransaction.description || !newTransaction.category) return;
 
-    const transaction = {
-      id: Date.now(),
-      ...newTransaction,
-      amount: parseFloat(newTransaction.amount),
-    };
+    try {
+      setLoading(true);
 
-    setTransactions([...transactions, transaction]);
-    setNewTransaction({
-      amount: '',
-      description: '',
-      category: '',
-      type: 'outflow',
-      date: new Date().toISOString().split('T')[0],
-    });
-    setIsModalOpen(false);
+      // get current user
+      await addTransaction(
+        {
+          user_id: userId,
+          amount: parseFloat(newTransaction.amount),
+          description: newTransaction.description,
+          category: newTransaction.category,
+          type: newTransaction.type,
+          date: newTransaction.date,
+          created_at: new Date(),
+        },
+      );
+
+    toast.success("Transaction added successfully ")
+ 
+        // reset form and close modal
+        setNewTransaction({
+          amount: '',
+          description: '',
+          category: '',
+          type: 'outflow',
+          date: new Date().toISOString().split('T')[0],
+        });
+        setIsModalOpen(false);
+      } catch (err:any){
+        toast.error(err.message.ToUpperCase());
+        if (err instanceof Error) {
+    console.error(err.message)
+  }
+    } 
+    // finally {
+    //   setLoading(false);
+    // }
   };
 
   const handleCloseModal = () => {
@@ -105,6 +120,7 @@ export default function CreateTransaction({ isModalOpen, setIsModalOpen }: any) 
       type: 'outflow',
       date: new Date().toISOString().split('T')[0],
     });
+    setErrorMsg('');
   };
 
   const formatDate = (dateString: string) => {
@@ -112,6 +128,8 @@ export default function CreateTransaction({ isModalOpen, setIsModalOpen }: any) 
     const options: any = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
     return date.toLocaleDateString('en-US', options);
   };
+
+  // if (!isModalOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -124,6 +142,9 @@ export default function CreateTransaction({ isModalOpen, setIsModalOpen }: any) 
         </div>
 
         <form onSubmit={handleSubmitTransaction} className="space-y-6">
+          {/* Error message */}
+          {errorMsg && <p className="text-red-500 text-sm">{errorMsg}</p>}
+
           {/* Transaction Type */}
           <div>
             <label className="block text-sm font-medium text-center text-gray-700 mb-3">
@@ -174,15 +195,9 @@ export default function CreateTransaction({ isModalOpen, setIsModalOpen }: any) 
                 step="0.01"
                 min="0"
                 value={newTransaction.amount}
-                onChange={(e) => {
-                  const value = Math.max(0, parseFloat(e.target.value) || 0);
-                  setNewTransaction({ ...newTransaction, amount: value.toString() });
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === '-' || e.key === 'e' || e.key === 'E') {
-                    e.preventDefault();
-                  }
-                }}
+                onChange={(e) =>
+                  setNewTransaction({ ...newTransaction, amount: e.target.value })
+                }
                 className="w-full pl-12 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-lg"
                 placeholder="0.00"
                 required
@@ -234,7 +249,6 @@ export default function CreateTransaction({ isModalOpen, setIsModalOpen }: any) 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
             <div className="space-y-3">
-              {/* Custom Date Display */}
               <div className="relative">
                 <input
                   type="date"
@@ -258,12 +272,11 @@ export default function CreateTransaction({ isModalOpen, setIsModalOpen }: any) 
                     type="button"
                     onClick={() => handleDateChange(label)}
                     className={`px-3 py-2 text-xs rounded-lg border transition duration-200
-            ${
-              activeLabel === label
-                ? 'bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100'
-                : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
-            }
-          `}
+                      ${
+                        activeLabel === label
+                          ? 'bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100'
+                          : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
+                      }`}
                   >
                     {label}
                   </button>
@@ -283,9 +296,14 @@ export default function CreateTransaction({ isModalOpen, setIsModalOpen }: any) 
             </button>
             <button
               type="submit"
-              className={`flex-1 px-4 py-3 text-white rounded-lg font-medium transition-colors bg-blue-500`}
+              disabled={loading}
+              className={`flex-1 px-4 py-3 text-white rounded-lg font-medium transition-colors ${
+                loading ? 'bg-blue-300 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600'
+              }`}
             >
-              Add {newTransaction.type === 'inflow' ? 'Income' : 'Expense'}
+              {loading
+                ? 'Saving...'
+                : `Add ${newTransaction.type === 'inflow' ? 'Income' : 'Expense'}`}
             </button>
           </div>
         </form>
