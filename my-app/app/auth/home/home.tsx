@@ -96,7 +96,7 @@ export function Home({ userId, username, email }: {
         {/* Chat area (shown only if open) */}
         {isChatOpen && (
           <div className="w-1/3 h-full overflow-hidden border-l border-gray-200">
-            <ChatComponent isChatOpen={isChatOpen} setIsChatOpen={setIsChatOpen} />
+            <ChatComponent isChatOpen={isChatOpen} setIsChatOpen={setIsChatOpen}  userId={userId} username={username} email={email}/>
           </div>
         )}
       </div>
@@ -104,7 +104,7 @@ export function Home({ userId, username, email }: {
       {/* Mobile view */}
       <div className="lg:hidden overflow-hidden">
         {isChatOpen ? (
-          <ChatComponent isChatOpen={isChatOpen} setIsChatOpen={setIsChatOpen} />
+          <ChatComponent isChatOpen={isChatOpen} setIsChatOpen={setIsChatOpen}  userId={userId} username={username} email={email}/>
         ) : (
           <ExpenseDashboard isChatOpen={isChatOpen} setIsChatOpen={setIsChatOpen} username={username} />
         )}
