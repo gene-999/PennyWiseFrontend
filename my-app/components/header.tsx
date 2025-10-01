@@ -59,11 +59,11 @@ export default function Header({
     }
   }, [user]);
 
-  const profileMenuRef = useRef(null);
+  const profileMenuRef = useRef<any>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: any) => {
-      // @ts-ignore
+      
       if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
         setIsProfileMenuOpen(false);
       }
