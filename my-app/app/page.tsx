@@ -145,7 +145,7 @@ const PennyWiseHomepage = () => {
                 </span> */}
               </div>
               <div className="text-3xl mb-4">🎯</div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Budget Goals</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">Budget Alerts</h3>
               <p className="text-gray-600 leading-relaxed">
                 Set and track personalized budget goals. Get alerts when approaching limits and
                 celebrate savings wins.
@@ -159,10 +159,9 @@ const PennyWiseHomepage = () => {
                 </span> */}
               </div>
               <div className="text-3xl mb-4">📸</div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Receipt Scanner</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">Monthly Reports</h3>
               <p className="text-gray-600 leading-relaxed">
-                Snap photos of receipts for automatic expense extraction and categorization. No more
-                manual entry.
+               Emailed reports summarizing spending habit across the entire month. Report includes total spent, top categories, and suggestions to improve spending habits.
               </p>
             </div>
 
@@ -173,9 +172,9 @@ const PennyWiseHomepage = () => {
                 </span> */}
               </div>
               <div className="text-3xl mb-4">🏦</div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Bank Sync</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">Wallet Sync</h3>
               <p className="text-gray-600 leading-relaxed">
-                Connect your bank accounts for automatic transaction import. All your finances in
+                Connect your bank and or mobile money accounts for automatic transaction import. All your finances in
                 one secure place.
               </p>
             </div>

@@ -84,7 +84,7 @@ export function Home({ userId, username, email }: {
 
   return (
     <>
-        <Toaster position="top-right"/>
+        <Toaster position="top-right" duration={2000}/>
 
       {/* Desktop view */}
       <div className="hidden lg:flex w-full overflow-hidden">

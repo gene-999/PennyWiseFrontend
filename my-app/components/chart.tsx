@@ -73,7 +73,7 @@ export default function Chart({ transactions }: { transactions: Transaction[] })
       const [dayA] = a.label.split(' ');
       const [dayB] = b.label.split(' ');
       return parseInt(dayA) - parseInt(dayB);
-    });
+    }).reverse();
 
   const monthlyTotal = sortedChartData.reduce((sum, day) => sum + day.amount, 0);
 

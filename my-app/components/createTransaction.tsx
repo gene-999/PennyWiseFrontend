@@ -1,15 +1,16 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Calendar, X, ChevronDown } from 'lucide-react';
 import { getParamByISO } from 'iso-country-currency';
 import { addTransaction } from '@/lib/hooks/transcations';
 import { useUserStore } from '@/lib/store'
 import { toast } from 'sonner';
+import { getCategories } from "@/lib/hooks/categories"; // adjust the path if needed
+
 
 export default function CreateTransaction({ isModalOpen, setIsModalOpen }: any) {
   type TransactionType = 'outflow' | 'inflow';
 
-  console.log(isModalOpen)
   const [newTransaction, setNewTransaction] = useState<{
     amount: string;
     description: string;
@@ -29,7 +30,7 @@ export default function CreateTransaction({ isModalOpen, setIsModalOpen }: any) 
   const [errorMsg, setErrorMsg] = useState('');
     const userId = useUserStore((state) => state.userId)
 
-    console.log(userId)
+
   const handleDateChange = (label: string) => {
     const newDate = new Date();
 
@@ -46,7 +47,8 @@ export default function CreateTransaction({ isModalOpen, setIsModalOpen }: any) 
 
   const buttons = ['Today', 'Yesterday', 'Last Week'];
 
-const categories = {
+
+const [categories, setCategories] = useState({
   outflow: [
     { value: 'Food & Dining', label: '🍽️ Food & Dining' },
     { value: 'Transportation', label: '🚗 Transportation' },
@@ -65,7 +67,43 @@ const categories = {
     { value: 'Refund', label: '↩️ Refund' },
     { value: 'Other Income', label: '💵 Other Income' },
   ],
-};
+});
+
+ useEffect(()=>{
+   async function getCombinedCategories() {
+  try {
+    const userCategories = await getCategories();
+     const inflowUserCategories = userCategories
+      .filter(cat => cat.type === 'inflow')
+      .map(cat => ({
+        value: cat.name,
+        label: cat.name,
+      }));
+
+    const outflowUserCategories = userCategories
+      .filter(cat => cat.type === 'outflow')
+      .map(cat => ({
+        value: cat.name,
+        label: cat.name,
+      }));
+
+      setCategories({
+        inflow: [...categories.inflow, ...inflowUserCategories],
+      outflow: [...categories.outflow, ...outflowUserCategories],
+      })
+    return {
+      inflow: [...categories.inflow, ...inflowUserCategories],
+      outflow: [...categories.outflow, ...outflowUserCategories],
+    };
+  } catch (error) {
+    console.log("Error fetching combined categories:", error);
+
+    ;
+  }
+}
+getCombinedCategories()
+ },[])
+
 
   // Submit transaction to Supabase
   const handleSubmitTransaction = async (e: any) => {

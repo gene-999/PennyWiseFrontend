@@ -12,8 +12,10 @@ import {
 } from 'lucide-react';
 import CreateTransaction from './createTransaction';
 import { usePathname } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
 import { useUser } from '@/lib/hooks/auth';
+import CategoriesModal from './catgories';
+import ProfileModal from './profile';
+import { getProfileById } from '@/lib/hooks/profile';
 
 
 export default function Header({
@@ -31,9 +33,9 @@ export default function Header({
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isCategoriesModalOpen, setIsCategoriesModalOpen] = useState(false);
   
-  console.log(isModalOpen)
+
   const { user, loading, error } = useUser();
-  console.log(user?.user_metadata.username)
+
 
   const pathname = usePathname();
 
@@ -48,16 +50,35 @@ export default function Header({
     currency: 'GHS',
   });
 
-  useEffect(() => {
+useEffect(() => {
+  const fetchUserDetails = async () => {
     if (user) {
-      setUserProfile({
-        name: user.user_metadata?.username || 'User',
-        email: user.email || '',
-        phone: '',
-        currency: 'GHS',
-      });
+      const userDetails = await getProfileById(user.id);
+
+      if (!userDetails || userDetails.length === 0) {
+        // No profile found — set default
+        setUserProfile({
+          name: user.user_metadata?.username || 'User',
+          email: user.email || '',
+          phone: '',
+          currency: 'GHS',
+        });
+      } else {
+        // Profile exists — set from DB
+        const profile = userDetails[0]; // Assuming it's an array with one object
+        setUserProfile({
+          name: profile.name || user.user_metadata?.username || 'User',
+          email: user.email || '',
+          phone: profile.phone || '',
+          currency: profile.currency || 'GHS',
+        });
+      }
     }
-  }, [user]);
+  };
+
+  fetchUserDetails();
+}, [user]);
+
 
   const profileMenuRef = useRef<any>(null);
 
@@ -68,7 +89,7 @@ export default function Header({
         setIsProfileMenuOpen(false);
       }
     };
-    console.log(document.body.offsetWidth)
+    
     if(document.body.offsetWidth > 1000) {
       if (isProfileMenuOpen) {
         document.addEventListener('mousedown', handleClickOutside);
@@ -79,173 +100,7 @@ export default function Header({
     }
   }, [isProfileMenuOpen]);
 
-  const handleProfileUpdate = (updatedProfile: any) => {
-    setUserProfile(updatedProfile);
-    setIsProfileModalOpen(false);
-  };
 
-  const ProfileModal = () => {
-    const [editedProfile, setEditedProfile] = useState(userProfile);
-
-    const handleSave = () => {
-      handleProfileUpdate(editedProfile);
-    };
-
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className={`rounded-lg shadow-xl w-full max-w-md bg-white`}>
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold">Manage Profile</h2>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsProfileModalOpen(false);
-                }}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <label className={`block text-sm font-medium mb-1 text-gray-700'}`}>
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  value={editedProfile.name}
-                  onChange={(e) => setEditedProfile({ ...editedProfile, name: e.target.value })}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${'bg-white border-gray-300'}`}
-                />
-              </div>
-              <div>
-                <label className={`block text-sm font-medium mb-1 text-gray-700'}`}>Phone</label>
-                <input
-                  type="tel"
-                  value={editedProfile.phone}
-                  onChange={(e) => setEditedProfile({ ...editedProfile, phone: e.target.value })}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white border-gray-300'
-                  }`}
-                />
-              </div>
-              <div>
-                <label className={`block text-sm font-medium mb-1 text-gray-700'}`}>Currency</label>
-                <select
-                  value={editedProfile.currency}
-                  onChange={(e) => setEditedProfile({ ...editedProfile, currency: e.target.value })}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white border-gray-300'
-                  }`}
-                >
-                  <option value="GHS">GHS - Ghanaian Cedi</option>
-                  <option value="USD">USD - US Dollar</option>
-                  <option value="EUR">EUR - Euro</option>
-                  <option value="GBP">GBP - British Pound</option>
-                </select>
-              </div>
-            </div>
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsProfileModalOpen(false);
-                }}
-                className={`flex-1 py-2 px-4 rounded-lg font-medium ${'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleSave();
-                }}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium flex items-center justify-center gap-2"
-              >
-                <Save className="w-4 h-4" />
-                Save Changes
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const CategoriesModal = () => {
-    const categories = [
-      { name: 'Food & Transport', transactions: 15, amount: 'GHS 432.50', color: 'bg-red-500' },
-      { name: 'Groceries', transactions: 8, amount: 'GHS 256.80', color: 'bg-green-500' },
-      { name: 'Utilities', transactions: 12, amount: 'GHS 189.30', color: 'bg-blue-500' },
-      { name: 'Entertainment', transactions: 6, amount: 'GHS 98.40', color: 'bg-purple-500' },
-      { name: 'Healthcare', transactions: 4, amount: 'GHS 156.20', color: 'bg-orange-500' },
-      { name: 'Shopping', transactions: 2, amount: 'GHS 45.90', color: 'bg-pink-500' },
-    ];
-
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] overflow-hidden">
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold">Manage Categories</h2>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsCategoriesModalOpen(false);
-                }}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="space-y-4 max-h-96 overflow-y-auto">
-              {categories.map((category, index) => (
-                <div
-                  key={index}
-                  className={`p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-4 h-4 rounded-full ${category.color}`}></div>
-                      <div>
-                        <h3 className="font-medium">{category.name}</h3>
-                        <p className="text-sm text-gray-500">
-                          {category.transactions} transactions
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-medium">{category.amount}</p>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          alert(`Viewing details for ${category.name}`);
-                        }}
-                        className="text-blue-600 hover:text-blue-700 text-sm"
-                      >
-                        View Details
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="mt-6 pt-4 border-t border-gray-200">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  alert('Adding new category...');
-                }}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium flex items-center justify-center gap-2"
-              >
-                <Plus className="w-4 h-4" />
-                Add New Category
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
 
   return (
     <div className="bg-white border-b border-gray-200 px-3 sm:px-4 md:px-6 lg:px-8">
@@ -271,7 +126,7 @@ export default function Header({
               }}
               aria-label="Profile menu"
             >
-              <span className="text-blue-600 font-medium text-xs sm:text-sm">E</span>
+              <span className="text-blue-600 font-medium text-xs sm:text-sm"> {userProfile.name.charAt(0)}</span>
             </button>
             {isProfileMenuOpen && (
               <div
@@ -458,7 +313,7 @@ export default function Header({
               </div>
             )}
           </div>
-          <span className="text-gray-700 font-medium">Eugene</span>
+          <span className="text-gray-700 font-medium">{userProfile.name || "N/A"}</span>
         </div>
       </div>
 
@@ -496,8 +351,13 @@ export default function Header({
       {isModalOpen && (
         <CreateTransaction isModalOpen={isMobileMenuOpen} setIsModalOpen={setIsModalOpen} />
       )}
-      {isProfileModalOpen && <ProfileModal />}
-      {isCategoriesModalOpen && <CategoriesModal />}
+      {isProfileModalOpen && <ProfileModal 
+  setUserProfile={setUserProfile}
+  setIsProfileModalOpen={setIsProfileModalOpen}
+  userProfile={userProfile}
+  userId={user?.id} // Pass the user ID
+/>}
+      {isCategoriesModalOpen && <CategoriesModal isOpen={isCategoriesModalOpen} userId={user?.id} onClose={()=>setIsCategoriesModalOpen(false)} />}
     </div>
   );
 }

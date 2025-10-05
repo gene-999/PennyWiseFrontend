@@ -21,7 +21,7 @@ export async function askGemini( message: any, user_id: any ) {
   const expenseSummary = transactions
     .map(
       (t) =>
-        `• ${t.date}: GHS ${t.amount} - ${t.description} (${t.categories?.name || 'Uncategorized'})`
+        `• ${t.date}: GHS ${t.amount} - ${t.description} (${t.category || t.category?.name || 'Uncategorized'})`
     )
     .join('\n');
 
@@ -30,7 +30,8 @@ export async function askGemini( message: any, user_id: any ) {
     Your task is to answer the user's questions based on their recent spending history.
     Be concise, insightful, and use a conversational tone.
     Reference their specific transactions when it's helpful.
-
+    Your response must be in the form of normal text, no markdown since I am directly pasting it in chat
+    
     Here is the user's recent spending history:
     ${expenseSummary || 'No expenses found.'}
 

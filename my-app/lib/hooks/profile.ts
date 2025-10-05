@@ -14,7 +14,7 @@ export async function getProfiles() {
 
 export async function getProfileById(id) {
   try {
-    const { data, error } = await supabase.from('profiles').select('*').eq('id', id).single();
+    const { data, error } = await supabase.from('profiles').select('*').eq('user_id', id);
     if (error) throw error;
     return data;
   } catch (err) {
@@ -34,7 +34,7 @@ export async function addProfile(profile) {
 
 export async function updateProfile(id, updates) {
   try {
-    const { data, error } = await supabase.from('profiles').update(updates).eq('id', id).select();
+    const { data, error } = await supabase.from('profiles').update(updates).eq('user_id', id).select();
     if (error) throw error;
     return data;
   } catch (err) {
