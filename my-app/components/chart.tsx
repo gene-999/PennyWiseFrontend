@@ -1,6 +1,6 @@
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
 import { getParamByISO } from 'iso-country-currency';
-import { isAfter, isBefore, subDays, startOfDay, format } from 'date-fns';
+import { isAfter, isBefore, subDays, startOfDay, format, parse } from 'date-fns';
 
 type Transaction = {
   date: string; // ISO string expected
@@ -66,17 +66,25 @@ export default function Chart({ transactions }: { transactions: Transaction[] })
     dailyTotalsMap.set(labelBefore, 0);
   }
 
-  // Sort data for chart
-  const sortedChartData = Array.from(dailyTotalsMap.entries())
-    .map(([label, amount]) => ({ label, amount }))
-    .sort((a, b) => {
-      const [dayA] = a.label.split(' ');
-      const [dayB] = b.label.split(' ');
-      return parseInt(dayA) - parseInt(dayB);
-    });
 
-  const monthlyTotal = sortedChartData.reduce((sum, day) => sum + day.amount, 0);
+const sortedChartData = Array.from(dailyTotalsMap.entries())
+  .map(([label, amount]) => ({ label, amount }))
+  .sort((a, b) => {
+    // Parse the labels back to dates for proper comparison
+    const dateA = parse(a.label, 'd MMM', new Date());
+    const dateB = parse(b.label, 'd MMM', new Date());
+    return dateA.getTime() - dateB.getTime();
+  });
 
+  const currentMonth = new Date().getMonth();
+const currentYear = new Date().getFullYear();
+
+ const monthlyTotal = sortedChartData
+  .filter(({ label }) => {
+    const date = parse(label, 'd MMM', new Date());
+    return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+  })
+  .reduce((sum, day) => sum + day.amount, 0);
   return (
     <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
       <div className="mb-6">
