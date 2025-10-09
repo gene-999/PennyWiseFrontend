@@ -37,6 +37,7 @@ export async function updateTransaction(id, updates) {
   try {
     const { data, error } = await supabase.from('transactions').update(updates).eq('id', id).select();
     if (error) throw error;
+    console.log(data)
     return data;
   } catch (err) {
     throw err;

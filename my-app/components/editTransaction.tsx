@@ -7,7 +7,9 @@ import { updateTransaction, deleteTransaction } from '@/lib/hooks/transcations';
 
 const formatCurrency = (amount: number) => {
   console.log(amount)
-  return `GHS ${amount.toFixed(2)}`;
+  if(amount){
+    return `GHS ${amount.toFixed(2)}`
+  };
 };
 
 const formatDate = (dateString: string) => {
@@ -121,9 +123,10 @@ export default function EditTransaction({
       });
 
       // Update local
-      setSelectedTransaction(updated);
+      // setSelectedTransaction(updated);
       toast.success('Transaction updated');
-      setEditMode(false);
+      closeModal()
+
     } catch (err) {
       console.error('Error updating transaction', err);
       toast.error('Failed to update transaction');
